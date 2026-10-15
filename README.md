@@ -2,7 +2,7 @@
 
 A lightweight, framework-agnostic TypeScript QR Code Model 2 generator with zero runtime dependencies.
 
-> **Development status: Milestone 6 — working matrix, SVG and optional PNG output.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until broader conformance, production bundling, consumer installation, and npm publication checks are completed. PNG output is available through an isolated subpath.
+> **Development status: Milestone 7 — conformance checks and API hardening.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until production bundling, consumer installation, and npm publication checks are completed. PNG output is available through an isolated subpath.
 
 ## Quick start (source API)
 
@@ -37,7 +37,7 @@ const modules: boolean[][] = qr.matrix()
 const dark = modules[0]?.[0]
 ```
 
-`qrypt(input, options?)` accepts a JavaScript string. The returned result exposes `version`, `size` (modules per side), `mask`, `errorCorrectionLevel`, and `matrix()`. Matrix coordinates are `[y][x]`, where `true` is a dark module. `matrix()` returns a fresh copy each time, without the rendering quiet zone.
+`qrypt(input, options?)` accepts a JavaScript string. The returned result exposes `version`, `size` (modules per side), `mask`, `errorCorrectionLevel`, and `matrix()`. Matrix coordinates are `[y][x]`, where `true` is a dark module. `matrix()` returns a fresh copy each time, without the rendering quiet zone. The result object is frozen at runtime to protect its readonly metadata against accidental mutation.
 
 **Encoding options:**
 
@@ -144,6 +144,9 @@ npm run verify:ecc
 npm run verify:matrix
 npm run verify:svg
 npm run verify:png
+npm run verify:conformance         # exact capacity boundaries and independent mask-score oracle
+npm run verify:conformance-reference # optional: Python qrcode 160 rotated-mode comparisons
+npm run verify:conformance-reference:full # optional: Python qrcode 480 comparisons
 npm run verify:png-decode   # optional: requires Pillow, OpenCV and NumPy
 npm run verify:svg-decode   # optional: requires CairoSVG, OpenCV and NumPy
 npm run test                # Vitest; requires installed development dependencies
@@ -152,17 +155,17 @@ npm run verify:package
 npm pack --dry-run
 ```
 
-The `verify:*` Node suites work with the globally installed TypeScript compiler and Node's test runner, without installing development packages. Independent image scanning requires Python development-only tooling, not npm runtime dependencies.
+The `verify:*` Node suites work with the globally installed TypeScript compiler and Node's test runner, without installing development packages. The optional reference comparison uses Python `qrcode`, and independent image scanning uses separate Python development-only tooling; none are npm runtime dependencies.
 
 **Unverified release gates:** This offline workspace does not have the declared `vitest` and `tsdown` packages installed, and there is no lockfile. Production bundling, isolated ESM/CJS/TypeScript consumer imports, and actual distributable tarball verification are pending. Do not release based solely on the source checks.
 
-Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-06.md`.
+Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-07.md`.
 
 ## Limitations
 
 - QR Code Model 2 generation only; no scanner, decoder, logo overlay, gradients, or other barcode types.
 - PNG is limited to two opaque RGB palette colors; no transparency, built-in data URL, or advanced compression.
-- Unicode reader interoperability depends on ECI support.
+- Unicode reader interoperability depends on ECI support. During exploratory testing, OpenCV decoded 7 of 8 additional UTF-8 examples; one valid-looking Version 2/M symbol with `π 3.14` was not decoded by OpenCV, while alternate versions decoded correctly. This does not establish whether the limitation is specific to OpenCV or that symbol; validate with target scanners before relying on complex ECI text.
 - `toSVG` colors are restricted to six-digit hexadecimal RGB strings; transparency and CSS colors are not supported.
 - Official QR standard certification has not been claimed.
 

@@ -12,7 +12,7 @@ export function qrypt(input: string, options?: QryptOptions): QryptResult {
   const { version, errorCorrectionLevel } = plan
   const { size, mask } = symbol
   // The data buffer stays private. matrix() always supplies an independent copy.
-  return {
+  return Object.freeze({
     version,
     size,
     mask,
@@ -21,5 +21,5 @@ export function qrypt(input: string, options?: QryptOptions): QryptResult {
       return Array.from({ length: size }, (_, y) =>
         Array.from({ length: size }, (_, x) => symbol.dark[y * size + x] === 1))
     },
-  }
+  })
 }
