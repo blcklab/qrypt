@@ -2,7 +2,7 @@
 
 A lightweight, framework-agnostic TypeScript QR Code Model 2 generator with zero runtime dependencies.
 
-> **Development status: Milestone 7 — conformance checks and API hardening.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until production bundling, consumer installation, and npm publication checks are completed. PNG output is available through an isolated subpath.
+> **Development status: Milestone 8 — distribution verification gates added; release blocked pending an online production build.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until production bundling, consumer installation, and npm publication checks are completed. PNG output is available through an isolated subpath.
 
 ## Quick start (source API)
 
@@ -145,21 +145,24 @@ npm run verify:matrix
 npm run verify:svg
 npm run verify:png
 npm run verify:conformance         # exact capacity boundaries and independent mask-score oracle
+npm run verify:distribution:static # export and package metadata assertions
 npm run verify:conformance-reference # optional: Python qrcode 160 rotated-mode comparisons
 npm run verify:conformance-reference:full # optional: Python qrcode 480 comparisons
 npm run verify:png-decode   # optional: requires Pillow, OpenCV and NumPy
 npm run verify:svg-decode   # optional: requires CairoSVG, OpenCV and NumPy
 npm run test                # Vitest; requires installed development dependencies
 npm run build               # tsdown; requires installed development dependencies
-npm run verify:package
+npm run verify:package   # packs + installs tarball, checks ESM/CJS & NodeNext declaration consumers
+npm run verify:lockfile  # requires a committed package-lock.json
+npm run check:release    # complete online release gate
 npm pack --dry-run
 ```
 
 The `verify:*` Node suites work with the globally installed TypeScript compiler and Node's test runner, without installing development packages. The optional reference comparison uses Python `qrcode`, and independent image scanning uses separate Python development-only tooling; none are npm runtime dependencies.
 
-**Unverified release gates:** This offline workspace does not have the declared `vitest` and `tsdown` packages installed, and there is no lockfile. Production bundling, isolated ESM/CJS/TypeScript consumer imports, and actual distributable tarball verification are pending. Do not release based solely on the source checks.
+**Unverified release gates:** This offline workspace does not have the declared `vitest` and `tsdown` packages installed, and there is no lockfile. The new packed-package verifier is implemented but cannot pass until the real ESM/CJS/DTS artifacts have been built. Run `npm install`, commit `package-lock.json`, then run `npm ci` and `npm run check:release` on a machine with registry access. Do not publish based on source-only checks.
 
-Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-07.md`.
+Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-08.md`.
 
 ## Limitations
 

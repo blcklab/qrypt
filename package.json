@@ -48,7 +48,7 @@
     "build": "tsdown",
     "verify:package": "node scripts/verify-package.mjs",
     "verify:foundation": "tsc -p tsconfig.json --noEmit false --outDir .foundation-check && node --test test/foundation.node.test.mjs",
-    "check": "npm run typecheck && npm run test && npm run build && npm run verify:package",
+    "check": "npm run typecheck && npm run verify:distribution:static && npm run test && npm run build && npm run verify:package",
     "pack:check": "npm pack --dry-run",
     "verify:encoding": "tsc -p tsconfig.json --noEmit false --outDir .m2-check && node --test test/encoding.node.test.mjs",
     "verify:ecc": "tsc -p tsconfig.json --noEmit false --outDir .m3-check && node --test test/ecc.node.test.mjs",
@@ -60,7 +60,11 @@
     "verify:png-decode": "npm run verify:png && python scripts/verify-png-render.py",
     "verify:conformance": "tsc -p tsconfig.json --noEmit false --outDir .m7-check && node --test test/conformance.node.test.mjs",
     "verify:conformance-reference": "npm run verify:conformance && python scripts/verify-conformance.py",
-    "verify:conformance-reference:full": "npm run verify:conformance && python scripts/verify-conformance.py --full"
+    "verify:conformance-reference:full": "npm run verify:conformance && python scripts/verify-conformance.py --full",
+    "prepack": "npm run build",
+    "check:release": "npm run verify:lockfile && npm run check && npm pack --dry-run",
+    "verify:lockfile": "node scripts/verify-lockfile.mjs",
+    "verify:distribution:static": "node --test test/distribution.node.test.mjs"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.3",
