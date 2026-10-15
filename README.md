@@ -2,7 +2,7 @@
 
 A lightweight, framework-agnostic TypeScript QR Code Model 2 generator with zero runtime dependencies.
 
-> **Development status: Milestone 5 — working matrix and SVG output.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until independent conformance, production bundling, consumer installation, and npm publication checks are completed. PNG output is **not implemented**.
+> **Development status: Milestone 6 — working matrix, SVG and optional PNG output.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until broader conformance, production bundling, consumer installation, and npm publication checks are completed. PNG output is available through an isolated subpath.
 
 ## Quick start (source API)
 
@@ -70,9 +70,41 @@ The resulting square SVG has width and height `(qr.size + 2 × margin) × scale`
 
 A four-module quiet zone with high-contrast colors is recommended for reliable scanning. You can set `margin: 0`, but the resulting symbol may not scan correctly.
 
+### PNG API (optional subpath)
+
+```ts
+import { qrypt } from '@blcklab/qrypt'
+import { toPNG } from '@blcklab/qrypt/png'
+
+const qr = qrypt('https://example.com')
+const bytes: Uint8Array = toPNG(qr, {
+  scale: 8,
+  margin: 4,
+  darkColor: '#000000',
+  lightColor: '#FFFFFF',
+})
+```
+
+The PNG renderer is **not imported by the core entry point**. It is synchronous, framework-agnostic, dependency-free, and uses no DOM, Canvas, Buffer, or Node zlib API. `toPNG` returns real PNG bytes as `Uint8Array`. Its options have the same meanings and defaults as `toSVG`, including a four-module quiet zone.
+
+PNG output uses an opaque, one-bit indexed RGB palette (exactly two configured colors), not RGBA. There is no built-in data URL helper. A browser can create an object URL from the resulting bytes; a Node.js program can write the bytes directly.
+
+A single PNG is limited to **8,192 pixels on either side** and **16,777,216 total pixels**. The PNG's stored DEFLATE stream is standards-compliant but not LZ77-compressed; files may be larger than those produced by an optimized PNG compressor. The byte-level palette representation keeps typical QR PNG output reasonably small.
+
 ### Browser integration
 
-The SVG string can be used as markup in a trusted application context, or converted into an object URL through browser APIs. The encoder and SVG generator themselves need no browser environment. Dispose of object URLs when no longer needed.
+The SVG string can be used as markup in a trusted application context, or converted into an object URL through browser APIs. PNG bytes can similarly be rendered with a `Blob`:
+
+```ts
+import { qrypt } from '@blcklab/qrypt'
+import { toPNG } from '@blcklab/qrypt/png'
+
+const png = toPNG(qrypt('Hello!'))
+const url = URL.createObjectURL(new Blob([png], { type: 'image/png' }))
+// Assign URL to an <img> element, and revoke it after use.
+```
+
+This uses browser APIs in the *application*, not in Qrypt. Release object URLs when no longer needed.
 
 ### Node.js integration
 
@@ -83,7 +115,17 @@ import { qrypt, toSVG } from '@blcklab/qrypt'
 await writeFile('qrypt.svg', toSVG(qrypt('https://example.com')), 'utf8')
 ```
 
-The `node:fs/promises` import is **consumer application code**, not part of Qrypt's core or SVG renderer.
+For PNG files:
+
+```ts
+import { writeFile } from 'node:fs/promises'
+import { qrypt } from '@blcklab/qrypt'
+import { toPNG } from '@blcklab/qrypt/png'
+
+await writeFile('qrypt.png', toPNG(qrypt('https://example.com')))
+```
+
+The `node:fs/promises` import is **consumer application code**, not part of Qrypt's core or renderers.
 
 ### Validation and errors
 
@@ -91,7 +133,7 @@ Non-string input, malformed UTF-16 surrogate sequences, invalid options, unsuppo
 
 ## Development
 
-The build configuration targets ESM, CJS, and TypeScript declarations using `tsdown`. Node.js 22.12+ is required by the current development toolchain; the core encoder and SVG renderer avoid DOM and Node-only APIs.
+The build configuration targets ESM, CJS, and TypeScript declarations using `tsdown`. Node.js 22.12+ is required by the current development toolchain; the core encoder, SVG renderer, and optional PNG renderer avoid DOM and Node-only APIs.
 
 ```bash
 npm install
@@ -101,6 +143,8 @@ npm run verify:encoding
 npm run verify:ecc
 npm run verify:matrix
 npm run verify:svg
+npm run verify:png
+npm run verify:png-decode   # optional: requires Pillow, OpenCV and NumPy
 npm run verify:svg-decode   # optional: requires CairoSVG, OpenCV and NumPy
 npm run test                # Vitest; requires installed development dependencies
 npm run build               # tsdown; requires installed development dependencies
@@ -108,16 +152,16 @@ npm run verify:package
 npm pack --dry-run
 ```
 
-The `verify:*` Node suites work with the globally installed TypeScript compiler and Node's test runner, without installing development packages. Independent SVG scanning requires Python development-only tooling, not npm runtime dependencies.
+The `verify:*` Node suites work with the globally installed TypeScript compiler and Node's test runner, without installing development packages. Independent image scanning requires Python development-only tooling, not npm runtime dependencies.
 
 **Unverified release gates:** This offline workspace does not have the declared `vitest` and `tsdown` packages installed, and there is no lockfile. Production bundling, isolated ESM/CJS/TypeScript consumer imports, and actual distributable tarball verification are pending. Do not release based solely on the source checks.
 
-Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-05.md`.
+Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-06.md`.
 
 ## Limitations
 
 - QR Code Model 2 generation only; no scanner, decoder, logo overlay, gradients, or other barcode types.
-- PNG rendering is planned for a separate, optional export or may be deferred.
+- PNG is limited to two opaque RGB palette colors; no transparency, built-in data URL, or advanced compression.
 - Unicode reader interoperability depends on ECI support.
 - `toSVG` colors are restricted to six-digit hexadecimal RGB strings; transparency and CSS colors are not supported.
 - Official QR standard certification has not been claimed.

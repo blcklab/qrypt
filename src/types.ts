@@ -32,3 +32,6 @@ export interface SVGOptions {
   /** #RRGGBB only. Default: #FFFFFF. */
   lightColor?: string
 }
+
+/** PNG appearance options. Identical to SVG options; PNG is an optional subpath. */
+export interface PNGOptions extends SVGOptions {}

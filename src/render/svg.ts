@@ -1,58 +1,14 @@
 import type { QryptResult, SVGOptions } from '../types.js'
 
-const DEFAULT_SCALE = 8
-const DEFAULT_MARGIN = 4
+import { normalizeRenderOptions } from './options.js'
+
 const MAX_SVG_DIMENSION = 65_535
-const HEX_COLOR = /^#[0-9a-fA-F]{6}$/
-
-interface NormalizedSVGOptions {
-  readonly scale: number
-  readonly margin: number
-  readonly darkColor: string
-  readonly lightColor: string
-}
-
-function normalizeSVGOptions(options: SVGOptions | undefined): NormalizedSVGOptions {
-  if (options === undefined) {
-    return { scale: DEFAULT_SCALE, margin: DEFAULT_MARGIN, darkColor: '#000000', lightColor: '#FFFFFF' }
-  }
-  if (typeof options !== 'object' || options === null || Array.isArray(options) ||
-      (Object.getPrototypeOf(options) !== Object.prototype && Object.getPrototypeOf(options) !== null)) {
-    throw new TypeError('SVG options must be a plain object.')
-  }
-
-  for (const key of Object.keys(options)) {
-    if (key !== 'scale' && key !== 'margin' && key !== 'darkColor' && key !== 'lightColor') {
-      throw new TypeError(`Unknown SVG option: ${key}.`)
-    }
-  }
-
-  const scale = options.scale === undefined ? DEFAULT_SCALE : options.scale
-  const margin = options.margin === undefined ? DEFAULT_MARGIN : options.margin
-  const darkColor = options.darkColor === undefined ? '#000000' : options.darkColor
-  const lightColor = options.lightColor === undefined ? '#FFFFFF' : options.lightColor
-
-  if (!Number.isSafeInteger(scale) || scale < 1) {
-    throw new RangeError('SVG scale must be a positive safe integer.')
-  }
-  if (!Number.isSafeInteger(margin) || margin < 0) {
-    throw new RangeError('SVG margin must be a nonnegative safe integer.')
-  }
-  if (typeof darkColor !== 'string' || !HEX_COLOR.test(darkColor)) {
-    throw new TypeError('SVG darkColor must be a #RRGGBB hexadecimal color.')
-  }
-  if (typeof lightColor !== 'string' || !HEX_COLOR.test(lightColor)) {
-    throw new TypeError('SVG lightColor must be a #RRGGBB hexadecimal color.')
-  }
-
-  return { scale, margin, darkColor, lightColor }
-}
 
 /** Render a QR Code Model 2 symbol as a standalone, dependency-free SVG string.
  * The default four-module quiet zone is part of the output, not the QR matrix.
  */
 export function toSVG(qr: QryptResult, options?: SVGOptions): string {
-  const config = normalizeSVGOptions(options)
+  const config = normalizeRenderOptions(options, 'SVG')
   if (typeof qr !== 'object' || qr === null ||
       !Number.isInteger(qr.version) || qr.version < 1 || qr.version > 40 ||
       qr.size !== qr.version * 4 + 17 || typeof qr.matrix !== 'function') {

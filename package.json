@@ -21,6 +21,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./png": {
+      "import": {
+        "types": "./dist/png.d.ts",
+        "default": "./dist/png.js"
+      },
+      "require": {
+        "types": "./dist/png.d.cts",
+        "default": "./dist/png.cjs"
+      }
     }
   },
   "files": [
@@ -45,7 +55,9 @@
     "verify:matrix": "tsc -p tsconfig.json --noEmit false --outDir .m4-check && node --test test/matrix.node.test.mjs",
     "verify:decode": "npm run verify:matrix && python scripts/verify-independent-decode.py",
     "verify:svg": "tsc -p tsconfig.json --noEmit false --outDir .m5-check && node --test test/svg.node.test.mjs",
-    "verify:svg-decode": "npm run verify:svg && python scripts/verify-svg-render.py"
+    "verify:svg-decode": "npm run verify:svg && python scripts/verify-svg-render.py",
+    "verify:png": "tsc -p tsconfig.json --noEmit false --outDir .m6-check && node --test test/png.node.test.mjs",
+    "verify:png-decode": "npm run verify:png && python scripts/verify-png-render.py"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.3",
