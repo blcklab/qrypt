@@ -4,8 +4,8 @@ import { normalizeOptions, validateText } from './validation.js'
 /**
  * Encode a string as a QR Code Model 2 symbol.
  *
- * Milestone 1 defines and validates the public contract only.
- * This intentionally fails until the encoder is implemented in milestones 2–4.
+ * Milestones 1–3 define the API, encode payloads and interleave ECC.
+ * The public function intentionally fails until QR matrix construction in milestone 4.
  */
 export function qrypt(input: string, options?: QryptOptions): QryptResult {
   validateText(input)

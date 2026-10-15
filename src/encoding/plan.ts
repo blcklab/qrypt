@@ -3,6 +3,7 @@ import { getDataCodewords } from './capacity.js'
 import { optimizeSegments, writeSegmentBits } from './segments.js'
 import type { DataSegment } from './segments.js'
 import { validateText } from '../validation.js'
+import { interleaveWithErrorCorrection } from '../ecc/interleave.js'
 
 export interface EncodingPlan {
   readonly version: number
@@ -10,8 +11,10 @@ export interface EncodingPlan {
   readonly segments: readonly DataSegment[]
   readonly utf8ECI: boolean
   readonly bitLength: number
-  /** Data-only codewords, padded to full data capacity; ECC follows in milestone 3. */
+  /** Data-only codewords, padded to the exact data capacity. */
   readonly dataCodewords: Uint8Array
+  /** Fully interleaved data and Reed–Solomon ECC bytes. Matrix placement follows in milestone 4. */
+  readonly interleavedCodewords: Uint8Array
 }
 
 /** Finds the smallest version that fits; recomputes segmentation per version group. */
@@ -56,6 +59,7 @@ export function planEncoding(
       utf8ECI: optimized!.utf8ECI,
       bitLength: optimized!.bitLength,
       dataCodewords: padded,
+      interleavedCodewords: interleaveWithErrorCorrection(padded, version, errorCorrectionLevel),
     }
   }
   throw new RangeError(requestedVersion === 'auto'
