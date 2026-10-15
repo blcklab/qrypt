@@ -1,83 +1,61 @@
 # Qrypt
 
-A lightweight, framework-agnostic TypeScript QR Code Model 2 generator with zero runtime dependencies.
+A lightweight, framework-agnostic TypeScript library for generating QR Code Model 2 symbols. Zero runtime dependencies; no network access or platform-specific APIs are required for encoding or rendering.
 
-> **Development status: Milestone 8 — distribution verification gates added; release blocked pending an online production build.** Generates QR versions 1–40 with error correction L/M/Q/H and renders standalone SVGs. The package remains `private: true` until production bundling, consumer installation, and npm publication checks are completed. PNG output is available through an isolated subpath.
+**Status:** `0.1.0` pre-release source. **Not published to npm.** Package publication is intentionally disabled (`private: true`) until the build, declaration, package-installation, and release checks succeed. Examples below show the intended package imports once published.
 
-## Quick start (source API)
+## Installation
+
+After the first release:
+
+```bash
+npm install @blcklab/qrypt
+```
+
+For now, use the source ZIP or a locally verified package build. Do not interpret this command as confirmation that `0.1.0` is currently available on npm.
+
+## Quick start
 
 ```ts
 import { qrypt, toSVG } from '@blcklab/qrypt'
 
 const qr = qrypt('https://example.com', { errorCorrectionLevel: 'H' })
-const svg = toSVG(qr, {
-  scale: 8,
-  margin: 4,
-  darkColor: '#000000',
-  lightColor: '#FFFFFF',
-})
+const svg = toSVG(qr, { scale: 8, margin: 4 })
 
 console.log(qr.version, qr.size, qr.mask)
-// svg is a standalone SVG XML string. Save it as a .svg file or display it.
+// svg is a self-contained SVG string.
 ```
 
-**Installation:** This package is not yet published. The examples describe the intended import path for a future npm release; while developing, import from source or use the built distribution after a verified local build.
+Qrypt supports versions **1–40**, error correction **L/M/Q/H**, numeric/alphanumeric/UTF-8 byte segments, automatic mixed-mode selection, and Reed–Solomon error correction. SVG is included in the core entry; PNG is a separate, optional import.
 
-### Matrix API
+## Generate a module matrix
 
 ```ts
-import { qrypt } from '@blcklab/qrypt'
+import { qrypt, type QryptOptions } from '@blcklab/qrypt'
 
-const qr = qrypt('Hello 🌐 世界', {
-  errorCorrectionLevel: 'Q',
-  version: 'auto',
-})
-
+const options: QryptOptions = { errorCorrectionLevel: 'Q', version: 'auto' }
+const qr = qrypt('Hello 🌐 世界', options)
 const modules: boolean[][] = qr.matrix()
-const dark = modules[0]?.[0]
+
+console.log(qr.version, qr.size, qr.mask, qr.errorCorrectionLevel)
+console.log(modules[0]?.[0]) // true = dark module
 ```
 
-`qrypt(input, options?)` accepts a JavaScript string. The returned result exposes `version`, `size` (modules per side), `mask`, `errorCorrectionLevel`, and `matrix()`. Matrix coordinates are `[y][x]`, where `true` is a dark module. `matrix()` returns a fresh copy each time, without the rendering quiet zone. The result object is frozen at runtime to protect its readonly metadata against accidental mutation.
+`qrypt(input, options?)` accepts a JavaScript string (including the empty string). It does not normalize, trim, or modify the payload. Malformed UTF-16, invalid options, and oversized inputs are rejected. The result has readonly metadata and a `matrix()` method that returns a **fresh row-major** `boolean[][]` with coordinates `matrix[y][x]`. The quiet zone is deliberately **not** included in the matrix.
 
-**Encoding options:**
+| Encoding option | Default | Valid values |
+| --- | --- | --- |
+| `errorCorrectionLevel` | `'M'` | `'L'`, `'M'`, `'Q'`, `'H'` |
+| `version` | `'auto'` | `1` through `40`, or `'auto'` |
 
-| Setting | Type | Default | Behavior |
-| --- | --- | --- | --- |
-| `errorCorrectionLevel` | `'L' \| 'M' \| 'Q' \| 'H'` | `'M'` | Never silently downgraded. |
-| `version` | `1..40 \| 'auto'` | `'auto'` | Auto picks the smallest version that fits; explicit versions are preserved. |
+`'auto'` selects the smallest version fitting the input at the requested error-correction level. Explicit versions and correction levels are never silently changed.
 
-Qrypt automatically selects numeric, alphanumeric, and UTF-8 byte segments. Non-ASCII text is represented with UTF-8 ECI assignment 26. Some readers have incomplete ECI support, so test Unicode with your target scanning software.
-
-### SVG API
+## Render SVG
 
 ```ts
 import { qrypt, toSVG } from '@blcklab/qrypt'
 
-const qr = qrypt('HELLO WORLD')
-const svg = toSVG(qr, { scale: 12, margin: 4 })
-```
-
-`toSVG(qr, options?)` is a pure function that returns a valid standalone SVG string using a light background `<rect>` and compact dark-module `<path>`. It does **not** access the DOM or Node.js APIs, and it does not interpolate the payload into SVG markup.
-
-| Setting | Type | Default | Behavior |
-| --- | --- | --- | --- |
-| `scale` | positive safe integer | `8` | Output pixels per QR module. |
-| `margin` | nonnegative safe integer | `4` | Quiet zone, in modules. |
-| `darkColor` | `#RRGGBB` | `#000000` | Dark module color. |
-| `lightColor` | `#RRGGBB` | `#FFFFFF` | Background/quiet-zone color. |
-
-The resulting square SVG has width and height `(qr.size + 2 × margin) × scale` pixels, with a matching module-coordinate `viewBox`. Rendering is limited to **65,535 pixels per side** to prevent invalid or unreasonable dimensions. SVG stays vector-based regardless of its declared pixel size.
-
-A four-module quiet zone with high-contrast colors is recommended for reliable scanning. You can set `margin: 0`, but the resulting symbol may not scan correctly.
-
-### PNG API (optional subpath)
-
-```ts
-import { qrypt } from '@blcklab/qrypt'
-import { toPNG } from '@blcklab/qrypt/png'
-
-const qr = qrypt('https://example.com')
-const bytes: Uint8Array = toPNG(qr, {
+const svg = toSVG(qrypt('HELLO WORLD'), {
   scale: 8,
   margin: 4,
   darkColor: '#000000',
@@ -85,92 +63,90 @@ const bytes: Uint8Array = toPNG(qr, {
 })
 ```
 
-The PNG renderer is **not imported by the core entry point**. It is synchronous, framework-agnostic, dependency-free, and uses no DOM, Canvas, Buffer, or Node zlib API. `toPNG` returns real PNG bytes as `Uint8Array`. Its options have the same meanings and defaults as `toSVG`, including a four-module quiet zone.
+SVG output is standalone XML using sharp-edged module paths. No browser DOM is involved and input text is never inserted into the SVG. The output's width and height are `(qr.size + 2 × margin) × scale` pixels, with a maximum dimension of **65,535 pixels per side**.
 
-PNG output uses an opaque, one-bit indexed RGB palette (exactly two configured colors), not RGBA. There is no built-in data URL helper. A browser can create an object URL from the resulting bytes; a Node.js program can write the bytes directly.
-
-A single PNG is limited to **8,192 pixels on either side** and **16,777,216 total pixels**. The PNG's stored DEFLATE stream is standards-compliant but not LZ77-compressed; files may be larger than those produced by an optimized PNG compressor. The byte-level palette representation keeps typical QR PNG output reasonably small.
-
-### Browser integration
-
-The SVG string can be used as markup in a trusted application context, or converted into an object URL through browser APIs. PNG bytes can similarly be rendered with a `Blob`:
+## Render PNG (optional)
 
 ```ts
 import { qrypt } from '@blcklab/qrypt'
 import { toPNG } from '@blcklab/qrypt/png'
 
-const png = toPNG(qrypt('Hello!'))
-const url = URL.createObjectURL(new Blob([png], { type: 'image/png' }))
-// Assign URL to an <img> element, and revoke it after use.
+const bytes: Uint8Array = toPNG(qrypt('https://example.com'), {
+  scale: 8,
+  margin: 4,
+  darkColor: '#000000',
+  lightColor: '#FFFFFF',
+})
 ```
 
-This uses browser APIs in the *application*, not in Qrypt. Release object URLs when no longer needed.
+`toPNG` returns actual PNG bytes, not a data URL. The separate `@blcklab/qrypt/png` entry generates an opaque, 1-bit indexed PNG using two RGB palette colors and portable TypeScript code. It does **not** require Canvas, Node.js `Buffer` or `zlib`, or third-party runtime dependencies. PNG output is limited to **8,192 pixels per side** and **16,777,216 total pixels**; its DEFLATE stream is valid but uncompressed, so output may be larger than PNGs from optimized compressors.
 
-### Node.js integration
+Both `toSVG` and `toPNG` use the same options:
+
+| Rendering option | Default | Valid values |
+| --- | --- | --- |
+| `scale` | `8` | Positive safe integer, in pixels per module |
+| `margin` | `4` | Nonnegative safe integer, in modules |
+| `darkColor` | `'#000000'` | Six-digit `#RRGGBB` |
+| `lightColor` | `'#FFFFFF'` | Six-digit `#RRGGBB` |
+
+For reliable scanning, retain the **four-module quiet zone** and use high-contrast colors. A `margin` of zero is allowed but may make the symbol unscannable.
+
+## Browser usage
+
+Create a local image URL from PNG bytes, then revoke it when no longer needed:
+
+```ts
+import { qrypt } from '@blcklab/qrypt'
+import { toPNG } from '@blcklab/qrypt/png'
+
+const bytes = toPNG(qrypt('Browser example'))
+const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }))
+// Use url as an <img> source in your application, then URL.revokeObjectURL(url).
+```
+
+The `Blob` and object-URL APIs above belong to the **consumer application**, not Qrypt's core or renderers. SVG may also be saved as a `.svg` file or displayed by your application's trusted rendering layer.
+
+## Node.js usage
 
 ```ts
 import { writeFile } from 'node:fs/promises'
 import { qrypt, toSVG } from '@blcklab/qrypt'
-
-await writeFile('qrypt.svg', toSVG(qrypt('https://example.com')), 'utf8')
-```
-
-For PNG files:
-
-```ts
-import { writeFile } from 'node:fs/promises'
-import { qrypt } from '@blcklab/qrypt'
 import { toPNG } from '@blcklab/qrypt/png'
 
-await writeFile('qrypt.png', toPNG(qrypt('https://example.com')))
+const qr = qrypt('Node.js example')
+await writeFile('qrypt.svg', toSVG(qr), 'utf8')
+await writeFile('qrypt.png', toPNG(qr))
 ```
 
-The `node:fs/promises` import is **consumer application code**, not part of Qrypt's core or renderers.
+The Node.js filesystem import is only used by the application. The library itself does not import Node-specific modules. Current package metadata requires **Node.js 22.12+** for the supported Node distribution; supported modern browsers can use the platform-independent code. ESM, CommonJS, and declaration entrypoints have been configured but are **not yet validated against a real production build**.
 
-### Validation and errors
+## Errors and interoperability
 
-Non-string input, malformed UTF-16 surrogate sequences, invalid options, unsupported colors, malformed QR matrices, and out-of-range SVG dimensions throw `TypeError` or `RangeError`. Text is never trimmed or normalized automatically; payloads that exceed QR capacity fail rather than being truncated.
+Invalid input types, ill-formed surrogate pairs, unsupported color formats, and invalid option objects throw `TypeError`; invalid ranges, exceeded QR capacities, or oversized render requests throw `RangeError`. Input is never silently truncated or correction levels downgraded.
 
-## Development
+Non-ASCII byte text uses UTF-8 with **ECI assignment 26**. ECI support varies between scanners; one exploratory OpenCV Unicode case failed while other Unicode symbols decoded. This remains an interoperability limitation to test against your target readers, not proof of official ISO conformance.
 
-The build configuration targets ESM, CJS, and TypeScript declarations using `tsdown`. Node.js 22.12+ is required by the current development toolchain; the core encoder, SVG renderer, and optional PNG renderer avoid DOM and Node-only APIs.
+Qrypt generates **QR Code Model 2** only. There is no scanner/decoder API, Micro QR, rMQR, logo overlay, gradients, camera integration, transparent PNG, or built-in data URL helper.
+
+## Development and release checks
 
 ```bash
-npm install
+npm install                 # registry required; generates package-lock.json
+npm ci                      # after committing the lockfile
 npm run typecheck
-npm run verify:foundation
-npm run verify:encoding
-npm run verify:ecc
-npm run verify:matrix
-npm run verify:svg
-npm run verify:png
-npm run verify:conformance         # exact capacity boundaries and independent mask-score oracle
-npm run verify:distribution:static # export and package metadata assertions
-npm run verify:conformance-reference # optional: Python qrcode 160 rotated-mode comparisons
-npm run verify:conformance-reference:full # optional: Python qrcode 480 comparisons
-npm run verify:png-decode   # optional: requires Pillow, OpenCV and NumPy
-npm run verify:svg-decode   # optional: requires CairoSVG, OpenCV and NumPy
-npm run test                # Vitest; requires installed development dependencies
-npm run build               # tsdown; requires installed development dependencies
-npm run verify:package   # packs + installs tarball, checks ESM/CJS & NodeNext declaration consumers
-npm run verify:lockfile  # requires a committed package-lock.json
-npm run check:release    # complete online release gate
-npm pack --dry-run
+npm run verify:docs
+npm run verify:conformance
+npm run verify:conformance-reference:full  # optional Python qrcode reference
+npm run verify:svg-decode                # optional Python CairoSVG, OpenCV, NumPy
+npm run verify:png-decode                # optional Python Pillow, OpenCV, NumPy
+npm run test                # Vitest
+npm run test:coverage
+npm run build               # tsdown: ESM, CJS, declarations
+npm run check:release       # lockfile, tests, build, tarball & consumer verification
 ```
 
-The `verify:*` Node suites work with the globally installed TypeScript compiler and Node's test runner, without installing development packages. The optional reference comparison uses Python `qrcode`, and independent image scanning uses separate Python development-only tooling; none are npm runtime dependencies.
-
-**Unverified release gates:** This offline workspace does not have the declared `vitest` and `tsdown` packages installed, and there is no lockfile. The new packed-package verifier is implemented but cannot pass until the real ESM/CJS/DTS artifacts have been built. Run `npm install`, commit `package-lock.json`, then run `npm ci` and `npm run check:release` on a machine with registry access. Do not publish based on source-only checks.
-
-Implementation and verification records: `docs/MILESTONE-01.md` through `docs/MILESTONE-08.md`.
-
-## Limitations
-
-- QR Code Model 2 generation only; no scanner, decoder, logo overlay, gradients, or other barcode types.
-- PNG is limited to two opaque RGB palette colors; no transparency, built-in data URL, or advanced compression.
-- Unicode reader interoperability depends on ECI support. During exploratory testing, OpenCV decoded 7 of 8 additional UTF-8 examples; one valid-looking Version 2/M symbol with `π 3.14` was not decoded by OpenCV, while alternate versions decoded correctly. This does not establish whether the limitation is specific to OpenCV or that symbol; validate with target scanners before relying on complex ECI text.
-- `toSVG` colors are restricted to six-digit hexadecimal RGB strings; transparency and CSS colors are not supported.
-- Official QR standard certification has not been claimed.
+`npm run check:release` must pass before any release approval. Production builds, real consumer imports, and lockfile reproducibility are **still unverified** in the offline development workspace; this repository is intentionally unpublished. See [Release checklist](docs/RELEASE-CHECKLIST.md), [Milestone 9](docs/MILESTONE-09.md), and [Changelog](CHANGELOG.md).
 
 ## License
 
