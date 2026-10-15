@@ -65,7 +65,8 @@
     "check:release": "npm run verify:lockfile && npm run check && npm pack --dry-run",
     "verify:lockfile": "node scripts/verify-lockfile.mjs",
     "verify:distribution:static": "node --test test/distribution.node.test.mjs",
-    "verify:docs": "node scripts/verify-docs.mjs"
+    "verify:docs": "node scripts/verify-docs.mjs",
+    "verify:eci-zbar": "npm run verify:png && python scripts/verify-eci-zbar.py"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.3",

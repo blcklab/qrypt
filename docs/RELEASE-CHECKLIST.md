@@ -11,7 +11,7 @@
 - [ ] Run `npm run test` and `npm run test:coverage` with the pinned Vitest packages; inspect failing/flaky tests and coverage gaps.
 - [ ] Run `npm run verify:conformance-reference:full` with Python `qrcode` installed.
 - [ ] Run `npm run verify:svg-decode` and `npm run verify:png-decode` with the documented optional Python tooling installed.
-- [ ] Investigate/record the Unicode/ECI interoperability case on at least one independent scanner other than OpenCV; document any accepted limitation.
+- [x] Independently check Unicode/ECI on a scanner other than OpenCV: ZBar returned exact UTF-8 for nine cases, including the earlier OpenCV failure. Document scanner-dependent compatibility and continue testing target devices before publication.
 - [ ] Run `npm run check:release` and confirm the **actual** ESM/CJS builds, `.d.ts`/`.d.cts` declarations, and isolated consumer installs pass.
 - [ ] Inspect generated `dist/` files and log minified/gzipped bundle sizes from the verifier. Validate core entry does not eagerly include PNG.
 - [ ] Inspect `npm pack --dry-run` and the actual verifier tarball list for leaks and missing files.
@@ -40,7 +40,7 @@ Only after all the above gates pass and the maintainer **explicitly authorizes p
 - The complete npm tarball and dual-module declaration import gates have **not yet run**; corresponding scripts exist but are not proof of completion.
 - `npm pack --dry-run` normally invokes `prepack`, which requires a working build toolchain. Do not claim it passes unless it ran successfully.
 - PNG is intentionally opaque with a two-color palette, and SVG accepts only `#RRGGBB` colors.
-- Unicode uses UTF-8 ECI 26; an exploratory OpenCV Unicode case failed. Official certification is not claimed.
+- Unicode uses UTF-8 ECI 26. ZBar decoded the previously failing OpenCV `π 3.14` v2/M case, suggesting reader interoperability variance. Official certification and universal reader support are not claimed.
 
 ## D. Release report template
 

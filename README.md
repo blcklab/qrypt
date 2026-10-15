@@ -125,7 +125,7 @@ The Node.js filesystem import is only used by the application. The library itsel
 
 Invalid input types, ill-formed surrogate pairs, unsupported color formats, and invalid option objects throw `TypeError`; invalid ranges, exceeded QR capacities, or oversized render requests throw `RangeError`. Input is never silently truncated or correction levels downgraded.
 
-Non-ASCII byte text uses UTF-8 with **ECI assignment 26**. ECI support varies between scanners; one exploratory OpenCV Unicode case failed while other Unicode symbols decoded. This remains an interoperability limitation to test against your target readers, not proof of official ISO conformance.
+Non-ASCII byte text uses UTF-8 with **ECI assignment 26**. Nine multilingual and emoji symbols—including `π 3.14` at version 2/M—have been independently decoded byte-for-byte with ZBar. OpenCV previously failed the latter specific symbol, so reader interoperability may vary; test with the readers used by your application. This does not establish official ISO certification.
 
 Qrypt generates **QR Code Model 2** only. There is no scanner/decoder API, Micro QR, rMQR, logo overlay, gradients, camera integration, transparent PNG, or built-in data URL helper.
 
@@ -144,9 +144,10 @@ npm run test                # Vitest
 npm run test:coverage
 npm run build               # tsdown: ESM, CJS, declarations
 npm run check:release       # lockfile, tests, build, tarball & consumer verification
+npm run verify:eci-zbar     # optional ZBar Unicode/ECI scan (Python tooling)
 ```
 
-`npm run check:release` must pass before any release approval. Production builds, real consumer imports, and lockfile reproducibility are **still unverified** in the offline development workspace; this repository is intentionally unpublished. See [Release checklist](docs/RELEASE-CHECKLIST.md), [Milestone 9](docs/MILESTONE-09.md), and [Changelog](CHANGELOG.md).
+`npm run check:release` must pass before any release approval. Production builds, real consumer imports, and lockfile reproducibility are **still unverified** in the offline development workspace; this repository is intentionally unpublished. See [Release audit (2026-10-12)](docs/RELEASE-GATE-2026-10-12.md), [Release checklist](docs/RELEASE-CHECKLIST.md), [Milestone 9](docs/MILESTONE-09.md), and [Changelog](CHANGELOG.md).
 
 ## License
 

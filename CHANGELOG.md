@@ -18,6 +18,6 @@ This file records public-facing changes. It is not evidence that a package has b
 
 - Package is still `private: true` and unpublished.
 - `package-lock.json`, production tsdown/Vitest verification, isolated npm consumer installation, and declaration checks require an online environment.
-- A Unicode/ECI scanner compatibility anomaly needs review before any unconditional interoperability claim.
+- Unicode/ECI was additionally validated by ZBar (nine exact UTF-8 reads). OpenCV behavior remains scanner-dependent; universal interoperability is not claimed.
 
 Release notes and tag must not be finalized until the release checklist is complete.
