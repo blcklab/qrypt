@@ -11,5 +11,7 @@ const cjs = require('../dist/index.cjs')
 for (const entry of [esm, cjs]) {
   assert.equal(typeof entry.qrypt, 'function')
   assert.equal(typeof entry.toSVG, 'function')
+  const svg = entry.toSVG(entry.qrypt('hello'))
+  assert.match(svg, /<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)
 }
 console.log('ESM and CommonJS distribution smoke test passed.')

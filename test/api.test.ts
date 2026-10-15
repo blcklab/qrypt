@@ -3,7 +3,7 @@ import { qrypt, toSVG } from '../src/index.js'
 
 // Foundation tests cover the real implemented behavior only.
 // Encoding conformance tests replace these placeholder expectations in later milestones.
-describe('public surface at milestone 4', () => {
+describe('public surface at milestone 5', () => {
   it('exports two functional entry points', () => {
     expect(typeof qrypt).toBe('function')
     expect(typeof toSVG).toBe('function')
@@ -18,7 +18,9 @@ describe('public surface at milestone 4', () => {
     expect(qr.mask).toBeLessThanOrEqual(7)
   })
 
-  it('does not pretend SVG rendering is implemented', () => {
-    expect(() => toSVG({} as never)).toThrow(/SVG rendering is not implemented/)
+  it('renders a standalone SVG using the public entry point', () => {
+    const svg = toSVG(qrypt('Hello, Qrypt!'))
+    expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"')
+    expect(svg).toContain('<path fill="#000000" d="')
   })
 })

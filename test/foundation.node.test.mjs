@@ -17,8 +17,10 @@ test('public encoder produces a square QR matrix', () => {
   assert.equal(qr.matrix()[0].length, qr.size)
 })
 
-test('the unimplemented renderer fails loudly', () => {
-  assert.throws(() => toSVG({}), /SVG rendering is not implemented/)
+test('SVG public entry renders a matrix into standalone SVG', () => {
+  const svg = toSVG(qrypt('hello'))
+  assert.match(svg, /<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)
+  assert.match(svg, /<path fill="#000000"/)
 })
 
 test('empty string and correct Unicode pairs are allowed', () => {
