@@ -7,3 +7,5 @@ coverage/
 .foundation-check/
 .m2-check/
 .m3-check/
+
+.m4-check/

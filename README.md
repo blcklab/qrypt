@@ -2,57 +2,60 @@
 
 A lightweight, framework-agnostic TypeScript QR Code Model 2 generator.
 
-> **Development status: Milestone 3 error-correction pipeline.** Data segmentation, capacity selection, padded data codewords, Reed–Solomon parity, and block interleaving are implemented and verified internally. **Final QR symbols, SVG rendering and PNG output are not yet implemented.** The package is marked `private` intentionally and must not be published or used as a QR generator until the conformance milestones pass.
+> **Development status: Milestone 4 — QR matrix implemented, rendering pending.** `qrypt()` now produces verified QR symbol module matrices for versions 1–40 with L/M/Q/H error correction. **SVG and PNG exports are not yet implemented.** The package remains `private: true` and must not be published until the release gates pass.
 
-## Planned public API
+## Matrix API (working from source)
+
+```ts
+import { qrypt } from '@blcklab/qrypt'
+
+const qr = qrypt('https://example.com', { errorCorrectionLevel: 'M' })
+console.log(qr.version, qr.size, qr.mask, qr.errorCorrectionLevel)
+const modules = qr.matrix() // modules[y][x] is true for a dark module
+```
+
+The matrix contains only the QR symbol, **without quiet zone**. Renderers must supply an appropriate white border (normally four modules) to make the symbol reliably scannable. `qr.matrix()` returns a fresh copy, so callers cannot mutate the encoded symbol.
+
+Options:
+
+- `errorCorrectionLevel`: `'L' | 'M' | 'Q' | 'H'`, default `'M'`.
+- `version`: `1`–`40` or `'auto'` (default). Explicit versions are never silently changed.
+
+UTF-8 text is encoded with ECI assignment 26 for non-ASCII data. Some readers have incomplete ECI support; validate interoperability with your target scanners. Malformed JavaScript UTF-16 surrogate pairs and unsupported input/options are rejected. Oversized payloads throw rather than silently truncate.
+
+## Rendering API (planned; **not yet usable**)
 
 ```ts
 import { qrypt, toSVG } from '@blcklab/qrypt'
 
-const qr = qrypt('https://example.com', { errorCorrectionLevel: 'M' })
-const matrix = qr.matrix() // matrix[y][x]: dark module?
-const svg = toSVG(qr, { scale: 8, margin: 4 })
+const qr = qrypt('https://example.com')
+const svg = toSVG(qr, { scale: 8, margin: 4 }) // throws until Milestone 5
 ```
 
-The example documents the **target contract**, not working public functionality at Milestone 2.
-
-## Proposed options
-
-Encoding accepts `errorCorrectionLevel` (`L`, `M`, `Q`, `H`; default `M`) and `version` (`1`–`40` or `auto`; default `auto`). Rendering uses separate `scale` (default `8`), `margin` (default `4`), `darkColor` and `lightColor` options. Colors will be restricted to six-digit hex strings.
-
-## Implemented through Milestone 3
-
-- TypeScript API contracts and input validation, including rejection of malformed UTF-16 surrogate sequences.
-- Numeric, alphanumeric and UTF-8 byte-mode segmentation, with version-aware optimal segment boundaries.
-- UTF-8 ECI assignment 26 for non-ASCII input; overhead is included in version capacity planning.
-- QR version 1–40 data capacity and error-correction block layout tables.
-- Deterministic smallest-fitting version selection (or exact requested version) at an explicit correction level.
-- Exact MSB-first QR bitstream, terminator, alignment and alternating data pad bytes.
-- GF(256) Reed–Solomon parity, correct short/long block grouping, and interleaved data/ECC codewords for all 40 versions and four correction levels.
-- Internal verification against independent capacity/codeword vectors, a short-input segmentation oracle, and an independent Python QR encoder for every one of the 160 ECC layouts.
-- **Not completed:** Matrix construction, masking, SVG/PNG rendering. The public `qrypt()` function deliberately still throws until those steps are integrated.
-
-Encoding is only available via private source modules at this stage; this is **not** a QR generation release.
+The proposed SVG renderer will support integer `scale`, nonnegative `margin`, and `#RRGGBB` `darkColor` / `lightColor`. PNG generation is deferred pending a separate architecture and correctness review.
 
 ## Development
 
-Use Node.js 22.12+ and install dependencies after registry access is available:
+Node.js 22.12+ is declared as the **development tooling** minimum; portable encoding code itself uses no Node- or DOM-specific APIs.
 
 ```bash
 npm install
 npm run typecheck
-npm run verify:foundation  # dependency-free foundation smoke checks
-npm run verify:encoding    # dependency-free encoding checks with TypeScript compiler
-npm run verify:ecc         # all 160 ECC layouts vs independent reference vectors
+npm run verify:foundation
+npm run verify:encoding
+npm run verify:ecc
+npm run verify:matrix
 npm run test
 npm run build
 npm run verify:package
 npm pack --dry-run
 ```
 
-**Known foundation limitation:** The lockfile and registry-dependent commands have not yet been verified in this workspace. Generate and commit the `package-lock.json` with a successful `npm install` before claiming a reproducible build or publishing.
+The four `verify:*` commands use the globally available TypeScript compiler and Node's built-in test runner, so their tests can run in this workspace without a registry install. The optional `python scripts/verify-independent-decode.py` uses development-only OpenCV and NumPy.
 
-See `docs/MILESTONE-01.md`, `docs/MILESTONE-02.md`, and `docs/MILESTONE-03.md` for verification details.
+**Outstanding packaging limitations:** The lockfile has not yet been generated. `vitest` and `tsdown` are not installed in this offline environment, so production bundling, consumer imports, `npm test`, and `npm pack` after bundling are still unverified. Do not claim a reproducible production package until those checks pass.
+
+Read the implementation and actual verification records in `docs/MILESTONE-01.md` through `docs/MILESTONE-04.md`.
 
 ## License
 

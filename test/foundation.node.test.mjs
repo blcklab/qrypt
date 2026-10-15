@@ -10,8 +10,11 @@ test('public entry points are available', () => {
   assert.equal(typeof toSVG, 'function')
 })
 
-test('the unimplemented encoder fails loudly', () => {
-  assert.throws(() => qrypt('hello'), /encoder is not implemented/)
+test('public encoder produces a square QR matrix', () => {
+  const qr = qrypt('hello')
+  assert.equal(qr.size, 4 * qr.version + 17)
+  assert.equal(qr.matrix().length, qr.size)
+  assert.equal(qr.matrix()[0].length, qr.size)
 })
 
 test('the unimplemented renderer fails loudly', () => {

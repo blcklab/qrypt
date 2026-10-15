@@ -41,7 +41,9 @@
     "check": "npm run typecheck && npm run test && npm run build && npm run verify:package",
     "pack:check": "npm pack --dry-run",
     "verify:encoding": "tsc -p tsconfig.json --noEmit false --outDir .m2-check && node --test test/encoding.node.test.mjs",
-    "verify:ecc": "tsc -p tsconfig.json --noEmit false --outDir .m3-check && node --test test/ecc.node.test.mjs"
+    "verify:ecc": "tsc -p tsconfig.json --noEmit false --outDir .m3-check && node --test test/ecc.node.test.mjs",
+    "verify:matrix": "tsc -p tsconfig.json --noEmit false --outDir .m4-check && node --test test/matrix.node.test.mjs",
+    "verify:decode": "npm run verify:matrix && python scripts/verify-independent-decode.py"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "5.0.3",

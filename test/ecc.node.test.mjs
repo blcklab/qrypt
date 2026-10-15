@@ -106,7 +106,7 @@ test('rejects incomplete/oversized/wrongly-typed data blocks and invalid QR vers
   assert.throws(() => interleaveWithErrorCorrection(new Uint8Array(19), 0, 'L'), /version/)
 })
 
-test('planEncoding exposes deterministic interleaved output while public QR API stays unfinished', () => {
+test('planEncoding exposes deterministic interleaved output while matrix generation stays separate', () => {
   const first = planEncoding('Hello 😀', 'H')
   const second = planEncoding('Hello 😀', 'H')
   assert.deepEqual(first.interleavedCodewords, second.interleavedCodewords)
