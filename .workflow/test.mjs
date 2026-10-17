@@ -22,8 +22,10 @@ if (args.has('--ci')) run('ci')
 run('run', 'check:release') // lockfile, docs, architecture, tests, build, bundle, isolated consumer
 run('run', 'test:coverage')
 if (args.has('--full')) {
-  for (const suite of ['verify:conformance-reference:full', 'verify:matrix-decoding-reference', 'verify:reliability:reference', 'verify:svg-decode', 'verify:png-decode', 'verify:pixels-decode', 'verify:styled-decode', 'verify:logo-decode']) {
-    run('run', suite)
+  for (const profile of ['conformance-reference-full', 'matrix-decoding-reference', 'reliability-reference', 'svg-decode', 'png-decode', 'pixels-decode', 'styled-decode', 'logo-decode']) {
+    console.log(`\n> node .workflow/check.mjs ${profile}`)
+    const result = spawnSync(process.execPath, ['.workflow/check.mjs', profile], { stdio: 'inherit' })
+    if (result.error || result.status !== 0) process.exit(result.status ?? 1)
   }
 }
 console.log('\nQrypt workflow checks passed. Real-device scanning and security review remain manual gates.')

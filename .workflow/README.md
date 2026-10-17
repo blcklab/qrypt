@@ -43,3 +43,30 @@ The workflow publishes with `--tag next`, **not** `latest`, so a preview cannot 
 - [`.github/workflows/publish.yml`](../.github/workflows/publish.yml) — **manual** dispatch, requires an npm-release environment and `NPM_TOKEN`; the same `private:false` and explicit-approval gates still apply.
 
 A committed `package-lock.json` is mandatory for reproducible `npm ci`. It was not included in the M20 handoff ZIP; use the lockfile from your locally verified checkout and commit it before enabling CI. Do not regenerate it by hand or bypass `verify:lockfile`.
+
+## Clean repository, preserved quality checks
+
+The main commands are `npm test`, `npm run test:coverage`, `npm run check`, and
+`npm run workflow:test`. Historical milestone and independent reference suites
+remain available under one maintainer-only entrypoint:
+
+```bash
+node .workflow/check.mjs --list
+node .workflow/check.mjs matrix
+node .workflow/check.mjs secure
+node .workflow/check.mjs reliability-reference   # requires Python tools
+npm run bench:qr
+```
+
+These checks compile into a temporary `.<milestone>-check/` directory **only for
+that check** and remove it whether the check passes or fails. If old generated
+folders are still in your checkout, remove them once with:
+
+```bash
+npm run clean:checks
+```
+
+This cleans only root-level `.foundation-check/` and `.m<number>-check/`
+artifacts. It never deletes `src/`, `test/`, `dist/`, docs, or `.internal/`.
+Package contents are governed by the explicit `files` allowlist in
+`package.json`; a separate `.npmignore` is unnecessary.
