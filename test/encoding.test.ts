@@ -143,11 +143,18 @@ describe('final pre-ECC data codewords', () => {
     expect(() => planEncoding('x'.repeat(3000), 'H')).toThrow(/exceeds QR Code Model 2/)
   })
   it('handles all supported version groups and bit-length accounting', () => {
+    const small = 'A'.repeat(6) + '1234567' + 'é'
+    const large = 'A'.repeat(12) + '1234567890123' + 'é'
+    // Version 1-L has 152 data bits; the large mixed-mode/ECI payload needs 177.
+    expect(optimizeSegments(large, 1).bitLength).toBeGreaterThan(getDataCodewords(1, 'L') * 8)
+    expect(() => planEncoding(large, 'L', 1)).toThrow(/exceeds QR version 1 capacity/)
+
     for (const version of [1, 9, 10, 26, 27, 40]) {
-      const plan = planEncoding('A'.repeat(12) + '1234567890123' + 'é', 'L', version)
+      const input = version === 1 ? small : large
+      const plan = planEncoding(input, 'L', version)
       expect(plan.version).toBe(version)
       expect(plan.dataCodewords.length).toBe(getDataCodewords(version, 'L'))
-      expect(plan.bitLength).toBe(optimizeSegments('A'.repeat(12) + '1234567890123' + 'é', version).bitLength)
+      expect(plan.bitLength).toBe(optimizeSegments(input, version).bitLength)
     }
   })
 })
