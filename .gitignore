@@ -1,4 +1,7 @@
 node_modules/
+
+# Local maintainer notes (never commit).
+.internal/
 dist/
 coverage/
 *.tgz
@@ -12,3 +15,20 @@ coverage/
 .m5-check/
 .m6-check/
 .m7-check/
+
+.m10-check/
+.m11-check/
+
+.m12-check/
+
+.m13-check/
+
+.m14-check/
+
+.m15-check/
+.m16-check/
+
+.m17-check/
+
+# Source verification artifacts, across all current and future milestones.
+.m*-check/

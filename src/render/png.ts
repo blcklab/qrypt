@@ -1,5 +1,6 @@
-import type { PNGOptions, QryptResult } from '../types.js'
+import type { PNGOptions, PixelBuffer, QryptResult } from '../types.js'
 import { normalizeRenderOptions } from './options.js'
+import { toPixels } from './pixels.js'
 
 // PNG Specification (Third Edition): indexed-color (type 3), one bit per
 // pixel, PLTE palette, filter 0 and a zlib-wrapped DEFLATE stored stream.
@@ -91,12 +92,15 @@ function rgb(color: string): Uint8Array {
   )
 }
 
-/** Synchronously encode a QR symbol as an opaque, 1-bit indexed-color PNG.
- * The result is portable PNG bytes, not a Node Buffer or browser data URL.
- * PNG supports custom RGB palette colors but not alpha transparency.
+/** Encode a QR symbol into portable PNG bytes. Opaque inputs retain the
+ * original compact two-color indexed representation, unchanged.
+ * Supplying non-opaque alpha selects the optional truecolor RGBA route.
  */
 export function toPNG(qr: QryptResult, options?: PNGOptions): Uint8Array {
-  const { scale, margin, darkColor, lightColor } = normalizeRenderOptions(options, 'PNG')
+  const { scale, margin, darkColor, lightColor, darkAlpha, lightAlpha } = normalizeRenderOptions(options, 'PNG')
+  if (darkAlpha !== 255 || lightAlpha !== 255) {
+    return toRGBAPNG(qr, options)
+  }
   if (typeof qr !== 'object' || qr === null ||
       !Number.isInteger(qr.version) || qr.version < 1 || qr.version > 40 ||
       qr.size !== qr.version * 4 + 17 || typeof qr.matrix !== 'function') {
@@ -167,4 +171,70 @@ export function toPNG(qr: QryptResult, options?: PNGOptions): Uint8Array {
     offset += chunk.length
   }
   return result
+}
+
+/** RGBA PNG: 8-bit truecolor + alpha, filter type 0, stored zlib stream.
+ * An output cap limits peak allocations from pixels + scanlines + PNG bytes.
+ */
+function toRGBAPNG(qr: QryptResult, options?: PNGOptions): Uint8Array {
+  return encodeRGBAPNG(toPixels(qr, options))
+}
+
+/** Portable RGBA PNG encoder reused by the optional styled renderer. */
+export function encodeRGBAPNG({ width, height, data }: PixelBuffer): Uint8Array {
+  if (!Number.isSafeInteger(width) || !Number.isSafeInteger(height) || width < 1 || height < 1 ||
+      width > MAX_PNG_DIMENSION || height > MAX_PNG_DIMENSION ||
+      width * height > MAX_PNG_PIXELS || data.length !== width * height * 4) {
+    throw new RangeError('Invalid RGBA pixel buffer dimensions.')
+  }
+  const stride = width * 4
+  const scanlines = new Uint8Array((1 + stride) * height)
+  for (let y = 0; y < height; y++) {
+    scanlines.set(data.subarray(y * stride, (y + 1) * stride), y * (stride + 1) + 1)
+  }
+  const header = new Uint8Array(13)
+  writeU32(header, 0, width)
+  writeU32(header, 4, height)
+  header[8] = 8 // 8 bits per channel
+  header[9] = 6 // truecolor RGBA
+  const chunks = [
+    PNG_SIGNATURE,
+    pngChunk(IHDR, header),
+    pngChunk(IDAT, deflateStored(scanlines)),
+    pngChunk(IEND, new Uint8Array(0)),
+  ]
+  const result = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0))
+  let offset = 0
+  for (const chunk of chunks) {
+    result.set(chunk, offset)
+    offset += chunk.length
+  }
+  return result
+}
+
+const BASE64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+/** Platform-neutral base64: does not use Node Buffer, DOM, or btoa. */
+function base64Encode(bytes: Uint8Array): string {
+  const pieces: string[] = []
+  let current = ''
+  for (let i = 0; i < bytes.length; i += 3) {
+    const a = bytes[i]!
+    const b = bytes[i + 1] ?? 0
+    const c = bytes[i + 2] ?? 0
+    current += BASE64[a >>> 2]! + BASE64[((a & 3) << 4) | (b >>> 4)]! +
+      (i + 1 < bytes.length ? BASE64[((b & 15) << 2) | (c >>> 6)]! : '=') +
+      (i + 2 < bytes.length ? BASE64[c & 63]! : '=')
+    if (current.length >= 16_384) {
+      pieces.push(current)
+      current = ''
+    }
+  }
+  pieces.push(current)
+  return pieces.join('')
+}
+
+/** Portable PNG data URL. For large images, prefer raw toPNG() bytes instead. */
+export function toPNGDataURL(qr: QryptResult, options?: PNGOptions): string {
+  return `data:image/png;base64,${base64Encode(toPNG(qr, options))}`
 }

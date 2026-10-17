@@ -15,7 +15,7 @@ describe('QR Code Model 2 matrix', () => {
         expect(qr.matrix().every(row => row.length === qr.size && row.every(v => typeof v === 'boolean'))).toBe(true)
       }
     }
-  })
+  }, 60_000) // Coverage instrumentation slows this 160-case QR matrix sweep.
   it('reserves precisely the functional module area', () => {
     for (let version = 1; version <= 40; version++) {
       const pattern = createFunctionPatterns(version, 'M')

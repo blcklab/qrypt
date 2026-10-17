@@ -1,23 +1,19 @@
 # Changelog
 
-This file records public-facing changes. It is not evidence that a package has been published.
+This page describes Qrypt from a user's perspective. Detailed milestone logs and release audits are local maintainer records and are not included in the npm package.
 
-## [Unreleased] — 0.1.0 candidate (not approved)
+## Unreleased — 0.1.0 preview
 
-### Added
+The first Qrypt release candidate includes:
 
-- Standards-based QR Code Model 2 data encoding, segment optimization, Reed–Solomon correction, and matrix construction, versions 1–40 with L/M/Q/H correction.
-- `qrypt(input, options?)` with readonly symbol metadata and defensive matrix copies.
-- Pure `toSVG(qr, options?)` rendering in the core entrypoint.
-- Portable, optional `toPNG(qr, options?)` via `@blcklab/qrypt/png`.
-- Independent encoder/matrix reference checks, scanner-based SVG and PNG checks, and public API regression tests.
-- ESM/CommonJS and TypeScript declaration export maps, plus a packed-package consumer verification script.
-- Consumer README, release checklist, and documentation integrity checks.
+- Standard QR Code Model 2 generation (Versions 1–40, error correction L/M/Q/H) with mixed text encoding and SVG output.
+- Optional PNG, RGBA pixel, styled, gradient and logo rendering.
+- Common QR payload builders for Wi-Fi, contact cards, email, SMS, phone, geo and calendar events.
+- QR decoding from a module matrix or raw image pixels, including Reed–Solomon repair.
+- Advanced binary, Kanji, GS1 and structured-append encoding.
+- ES256 signed QR payloads with trusted verification, key rotation, revocation hooks and optional replay protection integration.
+- ESM/CommonJS and TypeScript declaration exports with zero runtime npm dependencies.
 
-### Limitations / release blockers
+**Status:** Not yet published. QR image decoding remains sensitive to severe blur, clipped markers, and very small modules. Real-device scan acceptance and security review remain important before production-critical deployments.
 
-- Package is still `private: true` and unpublished.
-- `package-lock.json`, production tsdown/Vitest verification, isolated npm consumer installation, and declaration checks require an online environment.
-- Unicode/ECI was additionally validated by ZBar (nine exact UTF-8 reads). OpenCV behavior remains scanner-dependent; universal interoperability is not claimed.
-
-Release notes and tag must not be finalized until the release checklist is complete.
+[Getting started](docs/GETTING-STARTED.md) · [Full documentation](docs/README.md)

@@ -1,71 +1,73 @@
-/** Documentation consistency checks; intentionally needs only Node.js built-ins. */
+/** Check reader-friendly public docs, documented imports and package docs isolation. */
 import assert from 'node:assert/strict'
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { resolve, dirname, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
-const manifest = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
-const read = (file) => readFileSync(resolve(root, file), 'utf8')
-const readme = read('README.md')
-const changelog = read('CHANGELOG.md')
-const checklist = read('docs/RELEASE-CHECKLIST.md')
-const index = read('src/index.ts')
-const png = read('src/png.ts')
+const read = name => readFileSync(resolve(root, name), 'utf8')
+const manifest = JSON.parse(read('package.json'))
+const publicDocs = [
+  'README.md', 'CHANGELOG.md', 'docs/README.md', 'docs/GETTING-STARTED.md',
+  'docs/GENERATING.md', 'docs/EXPORTING.md', 'docs/STYLING-AND-LOGOS.md',
+  'docs/PAYLOADS.md', 'docs/DECODING.md', 'docs/ADVANCED.md',
+  'docs/SECURE-QR.md', 'docs/API.md', 'docs/TROUBLESHOOTING.md',
+]
+const publicSource = new Map([
+  ['@blcklab/qrypt', 'src/index.ts'],
+  ...['png', 'render', 'styled', 'logo', 'payloads', 'decode', 'advanced', 'secure']
+    .map(name => [`@blcklab/qrypt/${name}`, `src/${name}.ts`]),
+])
 
 assert.equal(manifest.name, '@blcklab/qrypt')
-assert.equal(manifest.version, '0.1.0')
 assert.equal(manifest.license, 'MIT')
-assert.equal(manifest.publishConfig?.access, 'public', 'Scoped public npm publishing must be explicit')
-assert.equal(typeof manifest.private, 'boolean', 'Package publishing state must be explicit')
-assert.deepEqual(Object.keys(manifest.dependencies ?? {}), [], 'No runtime dependencies')
-assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './png'])
+assert.equal(manifest.publishConfig?.access, 'public')
+assert.equal(typeof manifest.private, 'boolean')
+assert.deepEqual(manifest.files, ['dist', 'docs', 'README.md', 'LICENSE'])
+assert.deepEqual(Object.keys(manifest.dependencies ?? {}), [])
+assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './advanced', './decode', './logo', './payloads', './png', './render', './secure', './styled'])
+assert.equal(manifest.scripts['workflow:test'], 'node .workflow/test.mjs')
+assert.equal(manifest.scripts['workflow:publish'], 'node .workflow/publish.mjs')
+assert.ok(existsSync(resolve(root, '.workflow/test.mjs')))
+assert.ok(existsSync(resolve(root, '.workflow/publish.mjs')))
+assert.match(read('.gitignore'), /^\.internal\/$/m, 'Local .internal/ notes must be Git-ignored')
+assert.ok(readdirSync(resolve(root, 'docs')).every(name => !/^MILESTONE-|RELEASE-|^M\d+-|^SECURE-QR-ROADMAP/.test(name)), 'Development notes must not appear in public docs')
 
-for (const heading of [
-  '# Qrypt', '## Installation', '## Quick start', '## Generate a module matrix',
-  '## Render SVG', '## Render PNG', '## Browser usage', '## Node.js usage',
-  '## Errors and interoperability', '## Development and release checks', '## License',
-]) {
-  assert.ok(readme.includes(heading), `README is missing heading: ${heading}`)
-}
-if (manifest.private) {
-  assert.match(readme, /\bprivate: true\b/, 'Unpublished README must explain the publishing gate')
-} else {
-  assert.doesNotMatch(readme, /\bprivate: true\b/, 'README incorrectly describes approved package as private')
-}
-assert.match(readme, /not published|unpublished|not yet published/i)
-assert.match(changelog, /Unreleased/)
-assert.match(checklist, /BLOCKED \/ NOT PUBLISHED/)
-assert.match(checklist, /npm run check:release/)
-assert.match(checklist, /maintainer.*(authoriz|permission)/i)
-
-// Verify documented, named package imports are actually exposed by the source
-// entrypoints. Avoid assuming unpublished package imports already resolve.
-const sourceExports = new Map([
-  ['@blcklab/qrypt', index],
-  ['@blcklab/qrypt/png', png],
-])
-let importCount = 0
-for (const match of readme.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"](@blcklab\/qrypt(?:\/png)?)['"]/g)) {
-  const [, names, path] = match
-  for (const item of names.split(',')) {
-    const name = item.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]
-    assert.match(name, /^[A-Za-z_$][\w$]*$/, `Unexpected documented import name: ${name}`)
-    assert.match(sourceExports.get(path), new RegExp(`\\b${name}\\b`), `README imports ${name} but ${path} does not export it`)
-  }
-  importCount++
-}
-assert.ok(importCount >= 7, 'Expected multiple real public import examples in README')
-
-// Validate local relative Markdown links. External URLs and fragment-only links
-// are outside this repository and intentionally excluded.
-for (const doc of ['README.md', 'CHANGELOG.md', 'docs/RELEASE-CHECKLIST.md', 'docs/MILESTONE-09.md']) {
+const readme = read('README.md')
+assert.match(readme, /# Qrypt/)
+assert.match(readme, /## Installation/)
+assert.match(readme, /## Quick start/)
+assert.match(readme, /## Documentation/)
+assert.match(readme, /not been published|not yet published/i)
+assert.match(read('CHANGELOG.md'), /Unreleased/)
+if (manifest.private) assert.match(readme, /private.*true/i)
+else assert.doesNotMatch(readme, /private.*true/i)
+let imports = 0
+let links = 0
+for (const doc of publicDocs) {
   const contents = read(doc)
-  for (const [, target] of contents.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
-    if (/^(?:https?:|mailto:|#)/i.test(target)) continue
-    const path = target.split('#')[0]
-    const full = resolve(root, dirname(doc), decodeURIComponent(path))
-    assert.ok(full.startsWith(root + '/') && existsSync(full), `Broken local link in ${doc}: ${target}`)
+  assert.match(contents, /^# /, `Missing page title: ${doc}`)
+  for (const match of contents.matchAll(/import\s*\{([^}]+)\}\s*from\s*['"](@blcklab\/qrypt(?:\/(?:png|render|styled|logo|payloads|decode|advanced|secure))?)['"]/g)) {
+    const [, names, packageName] = match
+    const entry = publicSource.get(packageName)
+    assert.ok(entry, `Unknown documented entrypoint ${packageName} in ${doc}`)
+    const source = read(entry)
+    for (const item of names.split(',')) {
+      const name = item.trim().replace(/^type\s+/, '').split(/\s+as\s+/)[0]
+      assert.match(name, /^[A-Za-z_$][\w$]*$/, `Invalid import name ${name} in ${doc}`)
+      assert.match(source, new RegExp(`\\b${name}\\b`), `Unexported symbol ${packageName}/${name} in ${doc}`)
+    }
+    imports++
+  }
+  for (const [, href] of contents.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+    if (/^(?:https?:|mailto:|#)/i.test(href)) continue
+    const file = href.split('#')[0]
+    const destination = resolve(root, dirname(doc), decodeURIComponent(file))
+    assert.ok(destination.startsWith(root + sep), `External path in public documentation: ${href}`)
+    assert.ok(existsSync(destination), `Broken documentation link: ${doc} → ${href}`)
+    links++
   }
 }
-console.log(`Documentation verified: ${importCount} public import examples, sections, relative links, prepublication state and export metadata.`)
+assert.ok(imports >= 15, `Not enough tested import examples: ${imports}`)
+assert.ok(links >= 25, `Expected connected documentation, saw ${links} links`)
+console.log(`Documentation verified: ${publicDocs.length} public pages, ${imports} API imports, ${links} local links; development notes isolated.`)

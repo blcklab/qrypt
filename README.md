@@ -1,153 +1,98 @@
 # Qrypt
 
-A lightweight, framework-agnostic TypeScript library for generating QR Code Model 2 symbols. Zero runtime dependencies; no network access or platform-specific APIs are required for encoding or rendering.
+**QR codes, without the extra weight.**
 
-**Status:** `0.1.0` pre-release source. **Not published to npm.** Package publication is intentionally disabled (`private: true`) until the build, declaration, package-installation, and release checks succeed. Examples below show the intended package imports once published.
+Qrypt is a TypeScript QR code toolkit for web and Node.js applications. Create QR codes, style them, export SVG or PNG, decode an image, or work with signed QR payloads—all without runtime npm dependencies or framework lock-in.
+
+> **Release status:** Qrypt `0.1.0` is a preview and **has not been published to npm**. The examples below use the intended npm import paths; until release, use a verified local build or `file:` dependency. Publishing is blocked by `"private": true` in the source manifest.
 
 ## Installation
 
-After the first release:
+After Qrypt is published:
 
 ```bash
 npm install @blcklab/qrypt
 ```
 
-For now, use the source ZIP or a locally verified package build. Do not interpret this command as confirmation that `0.1.0` is currently available on npm.
+Until then, you can install a locally built package:
+
+```bash
+# From the Qrypt source checkout
+npm install
+npm run build
+
+# From your application (adapt the path)
+npm install ../qrypt
+```
+
+Local installation requires Qrypt's `dist/` build. If you are vendoring the source rather than the built package, configure your own build tool to compile its TypeScript.
 
 ## Quick start
 
 ```ts
 import { qrypt, toSVG } from '@blcklab/qrypt'
 
+const qr = qrypt('https://example.com')
+const svg = toSVG(qr)
+
+// svg is an SVG string: save it, or display it in your application.
+console.log(qr.version, qr.size)
+```
+
+No DOM, Canvas, browser camera, or network connection is required to **generate** a QR code.
+
+## Make it your own
+
+```ts
+import { qrypt } from '@blcklab/qrypt'
+import { toStyledSVG } from '@blcklab/qrypt/styled'
+
 const qr = qrypt('https://example.com', { errorCorrectionLevel: 'H' })
-const svg = toSVG(qr, { scale: 8, margin: 4 })
-
-console.log(qr.version, qr.size, qr.mask)
-// svg is a self-contained SVG string.
-```
-
-Qrypt supports versions **1–40**, error correction **L/M/Q/H**, numeric/alphanumeric/UTF-8 byte segments, automatic mixed-mode selection, and Reed–Solomon error correction. SVG is included in the core entry; PNG is a separate, optional import.
-
-## Generate a module matrix
-
-```ts
-import { qrypt, type QryptOptions } from '@blcklab/qrypt'
-
-const options: QryptOptions = { errorCorrectionLevel: 'Q', version: 'auto' }
-const qr = qrypt('Hello 🌐 世界', options)
-const modules: boolean[][] = qr.matrix()
-
-console.log(qr.version, qr.size, qr.mask, qr.errorCorrectionLevel)
-console.log(modules[0]?.[0]) // true = dark module
-```
-
-`qrypt(input, options?)` accepts a JavaScript string (including the empty string). It does not normalize, trim, or modify the payload. Malformed UTF-16, invalid options, and oversized inputs are rejected. The result has readonly metadata and a `matrix()` method that returns a **fresh row-major** `boolean[][]` with coordinates `matrix[y][x]`. The quiet zone is deliberately **not** included in the matrix.
-
-| Encoding option | Default | Valid values |
-| --- | --- | --- |
-| `errorCorrectionLevel` | `'M'` | `'L'`, `'M'`, `'Q'`, `'H'` |
-| `version` | `'auto'` | `1` through `40`, or `'auto'` |
-
-`'auto'` selects the smallest version fitting the input at the requested error-correction level. Explicit versions and correction levels are never silently changed.
-
-## Render SVG
-
-```ts
-import { qrypt, toSVG } from '@blcklab/qrypt'
-
-const svg = toSVG(qrypt('HELLO WORLD'), {
-  scale: 8,
+const svg = toStyledSVG(qr, {
+  scale: 10,
   margin: 4,
-  darkColor: '#000000',
+  moduleShape: 'rounded',
+  finderStyle: 'rounded',
+  darkColor: '#111827',
   lightColor: '#FFFFFF',
 })
 ```
 
-SVG output is standalone XML using sharp-edged module paths. No browser DOM is involved and input text is never inserted into the SVG. The output's width and height are `(qr.size + 2 × margin) × scale` pixels, with a maximum dimension of **65,535 pixels per side**.
+For photographs or logos, see the [branding guide](docs/STYLING-AND-LOGOS.md). Keep the quiet zone, use dark modules on a light background, and test the final design with real cameras.
 
-## Render PNG (optional)
+## What can Qrypt do?
 
-```ts
-import { qrypt } from '@blcklab/qrypt'
-import { toPNG } from '@blcklab/qrypt/png'
-
-const bytes: Uint8Array = toPNG(qrypt('https://example.com'), {
-  scale: 8,
-  margin: 4,
-  darkColor: '#000000',
-  lightColor: '#FFFFFF',
-})
-```
-
-`toPNG` returns actual PNG bytes, not a data URL. The separate `@blcklab/qrypt/png` entry generates an opaque, 1-bit indexed PNG using two RGB palette colors and portable TypeScript code. It does **not** require Canvas, Node.js `Buffer` or `zlib`, or third-party runtime dependencies. PNG output is limited to **8,192 pixels per side** and **16,777,216 total pixels**; its DEFLATE stream is valid but uncompressed, so output may be larger than PNGs from optimized compressors.
-
-Both `toSVG` and `toPNG` use the same options:
-
-| Rendering option | Default | Valid values |
+| Need | Import | Start here |
 | --- | --- | --- |
-| `scale` | `8` | Positive safe integer, in pixels per module |
-| `margin` | `4` | Nonnegative safe integer, in modules |
-| `darkColor` | `'#000000'` | Six-digit `#RRGGBB` |
-| `lightColor` | `'#FFFFFF'` | Six-digit `#RRGGBB` |
+| Generate QR codes and SVG | `@blcklab/qrypt` | [Generate QR codes](docs/GENERATING.md) |
+| Export PNG / data URLs | `@blcklab/qrypt/png` | [Export images](docs/EXPORTING.md) |
+| Get raw RGBA pixels | `@blcklab/qrypt/render` | [Export images](docs/EXPORTING.md) |
+| Create Wi-Fi, contact, email and event payloads | `@blcklab/qrypt/payloads` | [Common payloads](docs/PAYLOADS.md) |
+| Style QR modules and colors | `@blcklab/qrypt/styled` | [Styling and logos](docs/STYLING-AND-LOGOS.md) |
+| Add an RGBA logo | `@blcklab/qrypt/logo` | [Styling and logos](docs/STYLING-AND-LOGOS.md) |
+| Decode a matrix or raw image pixels | `@blcklab/qrypt/decode` | [Decode QR codes](docs/DECODING.md) |
+| Work with binary, Kanji, GS1 or structured append | `@blcklab/qrypt/advanced` | [Advanced formats](docs/ADVANCED.md) |
+| Sign and verify an ES256 QR token | `@blcklab/qrypt/secure` | [Signed QR codes](docs/SECURE-QR.md) |
 
-For reliable scanning, retain the **four-module quiet zone** and use high-contrast colors. A `margin` of zero is allowed but may make the symbol unscannable.
+Qrypt supports standard **QR Code Model 2**, Versions **1–40**, error-correction levels **L/M/Q/H**, automatic string segmentation, and Reed–Solomon error correction. It supports modern ESM, CommonJS, and TypeScript declarations.
 
-## Browser usage
+## Documentation
 
-Create a local image URL from PNG bytes, then revoke it when no longer needed:
+Start with the [getting started guide](docs/GETTING-STARTED.md). For a complete reference, see the [API reference](docs/API.md), or browse the [documentation index](docs/README.md).
 
-```ts
-import { qrypt } from '@blcklab/qrypt'
-import { toPNG } from '@blcklab/qrypt/png'
+## Important limitations
 
-const bytes = toPNG(qrypt('Browser example'))
-const url = URL.createObjectURL(new Blob([bytes], { type: 'image/png' }))
-// Use url as an <img> source in your application, then URL.revokeObjectURL(url).
-```
+- The image decoder accepts **raw RGBA, RGB, or grayscale pixels**, not a JPEG/PNG file directly. Decode the file with browser Canvas or another image decoder first.
+- Camera access and photo-file parsing are deliberately supplied by your application, not the library.
+- Complex styling, dense symbols, cropped QR codes, glare, and severe blur can make scanning less reliable.
+- Signed QR tokens establish authenticity, **not confidentiality or proof of a person's identity**. For one-time use, your application needs a durable, atomic redemption store.
+- Standard QR Code Model 2 holds up to **2,953 data bytes** at level L in byte mode; higher error correction and format overhead reduce capacity.
 
-The `Blob` and object-URL APIs above belong to the **consumer application**, not Qrypt's core or renderers. SVG may also be saved as a `.svg` file or displayed by your application's trusted rendering layer.
+See [troubleshooting](docs/TROUBLESHOOTING.md) and [security guidance](docs/SECURE-QR.md).
 
-## Node.js usage
+## Maintainer information
 
-```ts
-import { writeFile } from 'node:fs/promises'
-import { qrypt, toSVG } from '@blcklab/qrypt'
-import { toPNG } from '@blcklab/qrypt/png'
-
-const qr = qrypt('Node.js example')
-await writeFile('qrypt.svg', toSVG(qr), 'utf8')
-await writeFile('qrypt.png', toPNG(qr))
-```
-
-The Node.js filesystem import is only used by the application. The library itself does not import Node-specific modules. Current package metadata requires **Node.js 22.12+** for the supported Node distribution; supported modern browsers can use the platform-independent code. ESM, CommonJS, and declaration entrypoints have been configured but are **not yet validated against a real production build**.
-
-## Errors and interoperability
-
-Invalid input types, ill-formed surrogate pairs, unsupported color formats, and invalid option objects throw `TypeError`; invalid ranges, exceeded QR capacities, or oversized render requests throw `RangeError`. Input is never silently truncated or correction levels downgraded.
-
-Non-ASCII byte text uses UTF-8 with **ECI assignment 26**. Nine multilingual and emoji symbols—including `π 3.14` at version 2/M—have been independently decoded byte-for-byte with ZBar. OpenCV previously failed the latter specific symbol, so reader interoperability may vary; test with the readers used by your application. This does not establish official ISO certification.
-
-Qrypt generates **QR Code Model 2** only. There is no scanner/decoder API, Micro QR, rMQR, logo overlay, gradients, camera integration, transparent PNG, or built-in data URL helper.
-
-## Development and release checks
-
-```bash
-npm install                 # registry required; generates package-lock.json
-npm ci                      # after committing the lockfile
-npm run typecheck
-npm run verify:docs
-npm run verify:conformance
-npm run verify:conformance-reference:full  # optional Python qrcode reference
-npm run verify:svg-decode                # optional Python CairoSVG, OpenCV, NumPy
-npm run verify:png-decode                # optional Python Pillow, OpenCV, NumPy
-npm run test                # Vitest
-npm run test:coverage
-npm run build               # tsdown: ESM, CJS, declarations
-npm run check:release       # lockfile, tests, build, tarball & consumer verification
-npm run verify:eci-zbar     # optional ZBar Unicode/ECI scan (Python tooling)
-```
-
-`npm run check:release` must pass before any release approval. Production builds, real consumer imports, and lockfile reproducibility are **still unverified** in the offline development workspace; this repository is intentionally unpublished. See [Release audit (2026-10-12)](docs/RELEASE-GATE-2026-10-12.md), [Release checklist](docs/RELEASE-CHECKLIST.md), [Milestone 9](docs/MILESTONE-09.md), and [Changelog](CHANGELOG.md).
+Testing and publishing workflows for maintainers live in `.workflow/`. Local development notes can be kept in the Git-ignored `.internal/` directory. Neither is needed to use Qrypt. Publishing remains manually approved.
 
 ## License
 

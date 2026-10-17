@@ -8,8 +8,12 @@ export function qrypt(input: string, options?: QryptOptions): QryptResult {
   validateText(input)
   const config = normalizeOptions(options)
   const plan = planEncoding(input, config.errorCorrectionLevel, config.version)
-  const symbol = buildMatrix(plan.version, plan.errorCorrectionLevel, plan.interleavedCodewords)
-  const { version, errorCorrectionLevel } = plan
+  return makeQRResult(plan.version, plan.errorCorrectionLevel, plan.interleavedCodewords)
+}
+
+/** Internal symbol assembly reused by the optional advanced-mode encoder. */
+export function makeQRResult(version: number, errorCorrectionLevel: QryptResult['errorCorrectionLevel'], codewords: Uint8Array): QryptResult {
+  const symbol = buildMatrix(version, errorCorrectionLevel, codewords)
   const { size, mask } = symbol
   // The data buffer stays private. matrix() always supplies an independent copy.
   return Object.freeze({

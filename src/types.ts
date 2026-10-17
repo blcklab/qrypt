@@ -33,5 +33,22 @@ export interface SVGOptions {
   lightColor?: string
 }
 
-/** PNG appearance options. Identical to SVG options; PNG is an optional subpath. */
-export interface PNGOptions extends SVGOptions {}
+/** Portable raw pixel rendering; alpha channels are byte values (0–255). */
+export interface PixelOptions extends SVGOptions {
+  /** Dark-module opacity: 0 transparent, 255 opaque (default). */
+  darkAlpha?: number
+  /** Light-module/quiet-zone opacity: 0 transparent, 255 opaque (default). */
+  lightAlpha?: number
+}
+
+/** An uncompressed row-major RGBA image; data contains width × height × 4 bytes. */
+export interface PixelBuffer {
+  readonly width: number
+  readonly height: number
+  /** Four channels per pixel (R, G, B, A), row-major. May be modified by the caller. */
+  readonly data: Uint8ClampedArray
+}
+
+/** PNG options. Opaque output retains the existing compact 1-bit PNG representation. */
+export interface PNGOptions extends PixelOptions {}
+
