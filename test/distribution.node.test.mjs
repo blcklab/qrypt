@@ -10,7 +10,7 @@ test('public exports include core and optional PNG/payloads/render/secure/styled
   assert.deepEqual(Object.keys(manifest.peerDependencies ?? {}), [])
   assert.deepEqual(Object.keys(manifest.optionalDependencies ?? {}), [])
   assert.equal(manifest.sideEffects, false)
-  assert.deepEqual(manifest.files, ['dist', 'docs', 'README.md', 'LICENSE'])
+  assert.deepEqual(manifest.files, ['dist', 'README.md', 'LICENSE'])
 })
 
 test('ESM and CommonJS declarations are mapped explicitly for all entries', () => {

@@ -33,7 +33,7 @@ function checkManifest() {
   assert.deepEqual(Object.keys(manifest.peerDependencies ?? {}), [], 'No framework peer dependencies are allowed')
   assert.deepEqual(Object.keys(manifest.optionalDependencies ?? {}), [], 'No optional runtime dependencies are allowed')
   assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './advanced', './decode', './logo', './payloads', './png', './render', './secure', './styled'])
-  assert.deepEqual(manifest.files, ['dist', 'docs', 'README.md', 'LICENSE'])
+  assert.deepEqual(manifest.files, ['dist', 'README.md', 'LICENSE'])
   const expected = new Set([
     manifest.main,
     manifest.module,
@@ -93,7 +93,7 @@ try {
   assert.equal(item.name, manifest.name)
   assert.equal(item.version, manifest.version)
   const entries = new Set(item.files.map(file => file.path))
-  for (const filename of ['package.json', 'README.md', 'LICENSE', 'docs/README.md', 'docs/GETTING-STARTED.md', 'docs/API.md']) {
+  for (const filename of ['package.json', 'README.md', 'LICENSE']) {
     assert.ok(entries.has(filename), `Missing from npm tarball: ${filename}`)
   }
   for (const target of required) {
