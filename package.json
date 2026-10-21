@@ -116,8 +116,28 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "check": "npm run typecheck && npm test && npm run build",
-    "prepack": "npm run build"
+    "check": "npm run clean:checks && npm run typecheck && npm run verify:docs && npm run verify:distribution:static && npm run verify:architecture && npm run verify:hardening && npm run verify:reliability && npm test && npm run build && npm run verify:bundle && npm run verify:package",
+    "check:release": "npm run verify:lockfile && npm run check && npm pack --dry-run",
+    "pack:check": "npm pack --dry-run",
+    "prepack": "npm run build",
+    "verify:package": "node scripts/verify-package.mjs",
+    "verify:lockfile": "node scripts/verify-lockfile.mjs",
+    "verify:docs": "node scripts/verify-docs.mjs",
+    "verify:distribution:static": "node --test test/distribution.node.test.mjs",
+    "verify:architecture": "node scripts/verify-architecture.mjs",
+    "verify:bundle": "node scripts/verify-bundle.mjs",
+    "verify:hardening": "node .workflow/check.mjs hardening",
+    "verify:reliability": "node .workflow/check.mjs reliability",
+    "bench:qr": "node .workflow/check.mjs benchmark",
+    "clean:checks": "node .workflow/clean.mjs",
+    "workflow:test": "node .workflow/test.mjs",
+    "workflow:publish": "node .workflow/publish.mjs"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.3",
+    "tsdown": "0.23.0",
+    "typescript": "5.8.3",
+    "vitest": "5.0.3"
   },
   "keywords": [
     "qr-code",
