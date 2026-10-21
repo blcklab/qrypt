@@ -2,6 +2,7 @@
   "name": "@blcklab/qrypt",
   "version": "0.1.0",
   "description": "A zero-dependency, framework-agnostic TypeScript QR toolkit for generation, portable rendering, signed payloads, and matrix/image decoding.",
+  "private": false,
   "license": "MIT",
   "type": "module",
   "engines": {
