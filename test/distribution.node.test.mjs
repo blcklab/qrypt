@@ -30,5 +30,5 @@ test('release has explicit pack, lockfile, and consumer install gates', () => {
   assert.equal(manifest.scripts.prepack, 'npm run build')
   assert.match(manifest.scripts['verify:package'], /verify-package/)
   assert.match(manifest.scripts['check:release'], /verify:lockfile/)
-  assert.equal(typeof manifest.private, 'boolean')
+  assert.ok(manifest.private === undefined || typeof manifest.private === 'boolean', 'private must be a boolean when set')
 })

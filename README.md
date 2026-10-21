@@ -4,11 +4,11 @@
 
 Qrypt is a TypeScript QR code toolkit for web and Node.js applications. Create QR codes, style them, export SVG or PNG, decode an image, or work with signed QR payloads—all without runtime npm dependencies or framework lock-in.
 
-> **Release status:** Qrypt `0.1.0` is a preview and **has not been published to npm**. The examples below use the intended npm import paths; until release, use a verified local build or `file:` dependency. Publishing is blocked by `"private": true` in the source manifest.
+> **Release status:** Qrypt `0.1.0` is an initial preview release. For unreleased development changes, you can use a verified local build or a `file:` dependency.
 
 ## Installation
 
-After Qrypt is published:
+Install from npm once the release is available:
 
 ```bash
 npm install @blcklab/qrypt

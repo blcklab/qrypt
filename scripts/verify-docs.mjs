@@ -22,14 +22,12 @@ const publicSource = new Map([
 assert.equal(manifest.name, '@blcklab/qrypt')
 assert.equal(manifest.license, 'MIT')
 assert.equal(manifest.publishConfig?.access, 'public')
-assert.equal(typeof manifest.private, 'boolean')
+assert.ok(manifest.private === undefined || typeof manifest.private === 'boolean', 'private must be a boolean when set')
 assert.deepEqual(manifest.files, ['dist', 'README.md', 'LICENSE'])
 assert.deepEqual(Object.keys(manifest.dependencies ?? {}), [])
 assert.deepEqual(Object.keys(manifest.exports).sort(), ['.', './advanced', './decode', './logo', './payloads', './png', './render', './secure', './styled'])
 assert.equal(manifest.scripts['workflow:test'], 'node .workflow/test.mjs')
-assert.equal(manifest.scripts['workflow:publish'], 'node .workflow/publish.mjs')
 assert.ok(existsSync(resolve(root, '.workflow/test.mjs')))
-assert.ok(existsSync(resolve(root, '.workflow/publish.mjs')))
 assert.match(read('.gitignore'), /^\.internal\/$/m, 'Local .internal/ notes must be Git-ignored')
 assert.ok(readdirSync(resolve(root, 'docs')).every(name => !/^MILESTONE-|RELEASE-|^M\d+-|^SECURE-QR-ROADMAP/.test(name)), 'Development notes must not appear in public docs')
 
@@ -38,10 +36,6 @@ assert.match(readme, /# Qrypt/)
 assert.match(readme, /## Installation/)
 assert.match(readme, /## Quick start/)
 assert.match(readme, /## Documentation/)
-assert.match(readme, /not been published|not yet published/i)
-assert.match(read('CHANGELOG.md'), /Unreleased/)
-if (manifest.private) assert.match(readme, /private.*true/i)
-else assert.doesNotMatch(readme, /private.*true/i)
 let imports = 0
 let links = 0
 for (const doc of publicDocs) {

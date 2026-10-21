@@ -4,13 +4,13 @@ Qrypt turns text into a scannable QR code and can return SVG, PNG bytes, or imag
 
 ## 1. Install Qrypt
 
-When the package becomes available on npm:
+Install the published package:
 
 ```bash
 npm install @blcklab/qrypt
 ```
 
-Before publication, build the checked-out Qrypt source (`npm install && npm run build`) and install it in your application with `npm install ../qrypt` (adjust the local path).
+For unreleased local changes, build the checked-out Qrypt source (`npm install && npm run build`) and install it in your application with `npm install ../qrypt` (adjust the local path).
 
 ## 2. Create a QR code
 

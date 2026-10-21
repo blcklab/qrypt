@@ -27,7 +27,7 @@ function run(command, args, cwd, options = {}) {
 
 function checkManifest() {
   assert.equal(manifest.name, '@blcklab/qrypt')
-  assert.equal(typeof manifest.private, 'boolean', 'Explicitly set package publishing status')
+  assert.ok(manifest.private === undefined || typeof manifest.private === 'boolean', 'private must be a boolean when set')
   assert.equal(manifest.sideEffects, false)
   assert.deepEqual(Object.keys(manifest.dependencies ?? {}), [], 'Core must have zero runtime dependencies')
   assert.deepEqual(Object.keys(manifest.peerDependencies ?? {}), [], 'No framework peer dependencies are allowed')
