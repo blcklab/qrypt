@@ -1,79 +1,50 @@
 
-name: Qrypt npm release
+name: Publish Package
 
 on:
   push:
     tags:
       - 'v*'
 
-  workflow_dispatch:
-    inputs:
-      version:
-        description: Version exactly matching package.json
-        required: true
-        type: string
-      confirmation:
-        description: Type PUBLISH-QRYPT to confirm
-        required: true
-        type: string
-
 permissions:
   contents: read
-
-concurrency:
-  group: qrypt-npm-release
-  cancel-in-progress: false
+  id-token: write
 
 jobs:
   publish:
-    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.confirmation == 'PUBLISH-QRYPT')
     runs-on: ubuntu-latest
-    environment: npm-release
+    environment: npm
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
           registry-url: https://registry.npmjs.org
+          package-manager-cache: false
 
-      - name: Validate release version
-        id: release
+      - run: npm ci
+
+      - run: npm run check
+
+      - name: Verify tag and select npm dist-tag
         shell: bash
-        env:
-          MANUAL_VERSION: ${{ inputs.version }}
         run: |
-          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          VERSION=$(node -p "require('./package.json').version")
 
-          if [[ "$GITHUB_EVENT_NAME" == "push" ]]; then
-            RELEASE_VERSION="${GITHUB_REF_NAME#v}"
-          else
-            RELEASE_VERSION="$MANUAL_VERSION"
-          fi
-
-          if [[ "$RELEASE_VERSION" != "$PACKAGE_VERSION" ]]; then
-            echo "::error::Version mismatch: release=$RELEASE_VERSION package=$PACKAGE_VERSION"
+          if [ "$GITHUB_REF_NAME" != "v${VERSION}" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match package version v${VERSION}."
             exit 1
           fi
 
-          echo "version=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "Validated Qrypt version $RELEASE_VERSION"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "NPM_DIST_TAG=next" >> "$GITHUB_ENV"
+          else
+            echo "NPM_DIST_TAG=latest" >> "$GITHUB_ENV"
+          fi
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run release checks
-        run: npm run check:release
-
-      - name: Publish Qrypt
+      - name: Publish
+        run: npm publish --access public --provenance --tag "$NPM_DIST_TAG"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          QRYPT_PUBLISH_APPROVED: 'yes'
-          RELEASE_VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          node .workflow/publish.mjs \
-            --publish \
-            --confirm="@blcklab/qrypt@$RELEASE_VERSION"
